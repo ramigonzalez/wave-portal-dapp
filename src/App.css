@@ -1,0 +1,120 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-shadow: border-box;
+}
+
+html, body {
+  height: 100%  
+}
+
+.mainContainer {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  margin-top: 64px;
+  align-items: center;
+  justify-content: center;
+}
+
+.dataContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: normal;
+}
+
+.headerContainer {
+  display: inline-grid;
+}
+
+.header {
+  text-align: center;
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.btnHeader {
+  justify-content: right;
+}
+
+.bio {
+  text-align: center;
+  color: gray;
+  margin-top: 16px;
+}
+
+.waveButton {
+  cursor: pointer;
+  margin-top: 25px;
+  padding: 8px;
+  border: 0;
+  border-radius: 5px;
+  background-color: #0084ff;
+  color: white;
+  font-weight: bold;
+}
+
+div.btnContainer {
+  align-items: center;
+  justify-content: center;
+  display: flex;
+}
+
+.top {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  color: white;
+  text-align: center;
+}
+
+.warning {
+  background-color: red;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  font-weight: bold;
+}
+
+.connectWallet {
+  display: flex;
+  justify-content: right;
+}
+
+div.loading {
+  width: 40px;
+  height: 40px;
+  border: 5px solid;
+  border-color: #0084ff #e6e6e6 #e6e6e6 #e6e6e6;
+  border-radius: 50%;
+  animation: loading 1.5s infinite;
+}
+
+.small {
+  width: 10px;
+  height: 10px;
+}
+
+@keyframes loading {
+  0% {
+    transform: rotate(0deg);
+  }
+  
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+button:disabled,
+button[disabled]{
+  border: 1px solid #999999;
+  background-color: #cccccc;
+  color: #666666;
+}
+
+.counter {
+  font-size: 20px;
+  font-weight: bold;
+  color: black;
+}
