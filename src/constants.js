@@ -1,0 +1,5 @@
+module.exports = {
+  CONTRACT_ADDRESS: "0xB10e6469C48B3097E4EAB714E3cFD8b5558dd9b0",
+  GOERLI_CHAIN_ID: 5,
+  GOERLI_NAME: "goerli",
+};

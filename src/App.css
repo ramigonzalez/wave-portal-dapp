@@ -25,7 +25,10 @@ html, body {
 }
 
 .headerContainer {
-  display: inline-grid;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-flow: column;
 }
 
 .header {

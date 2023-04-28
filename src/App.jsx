@@ -2,28 +2,25 @@ import React, { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import './App.css';
 import WavePortalJson from './utils/WavePortal.json';
+import { CONTRACT_ADDRESS, GOERLI_CHAIN_ID, GOERLI_NAME } from './constants';
+const contractABI = WavePortalJson.abi;
 
 export default function App() {
-    
-  const [currentAccount, setCurrentAccount] = useState("");
+  
+  const [currentAccount, setCurrentAccount] = useState(null);
   const [totalWaves, setTotalWaves] = useState(0);
   const [mineLoading, setMineLoading] = useState(false);
   const [wrongNetworkError, setWrongNetworkError] = useState(false);
-  
-  const contractAddress = "0xB10e6469C48B3097E4EAB714E3cFD8b5558dd9b0";
-  const contractABI = WavePortalJson.abi;
-  const GOERLI_CHAIN_ID = 5;
-  const GOERLI_NAME = "goerli";
-  
+
   const checkIfWalletIsConnected = async () => {
     try {
       const { ethereum } = window;
 
       if (!ethereum) {
-        console.log("Garanta que possua a Metamask instalada!");
+        console.log("Metamask wallet must be installed!");
         return;
       } else {
-        console.log("Temos o objeto ethereum", ethereum);
+        console.log("Ethereum object", ethereum);
       }
 
       const accounts = await ethereum.request({ method: "eth_accounts" });
@@ -41,24 +38,20 @@ export default function App() {
     }
   }
 
-  /**
-  * Implemente aqui o seu método connectWallet
-  */
   const connectWallet = async () => {
     try {
       const { ethereum } = window;
-
-      if (!ethereum) {
-        // alert("MetaMask encontrada!");
-        return;
-      }
+debugger
+      if (!ethereum) return;
 
       const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+      console.log("window.ethereum.selectedAddress", window.ethereum.selectedAddress);
 
-      console.log("Conectado", accounts[0]);
-      setCurrentAccount(accounts[0]);
+      const account = accounts[0];
+      console.log("Conectado", account);
+      setCurrentAccount(account);
 
-      await getTotalWaves();
+      await getTotalWaves(account);
     } catch (error) {
       console.log(error)
     }
@@ -75,10 +68,10 @@ export default function App() {
       const { ethereum } = window;
 
       if (ethereum) {
-                
+
         const provider = new ethers.providers.Web3Provider(ethereum);
         const signer = provider.getSigner();
-        const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+        const wavePortalContract = new ethers.Contract(CONTRACT_ADDRESS, contractABI, signer);
 
         let count = await wavePortalContract.getTotalWaves();
         console.log("Recuperado o número de tchauzinhos...", count.toNumber());
@@ -106,14 +99,15 @@ export default function App() {
     }
   }
 
-  const getTotalWaves = async () => {
+  const getTotalWaves = async (account) => {
+    if (!account && !currentAccount) return;
     try {
       const { ethereum } = window;
 
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(ethereum);
         const signer = provider.getSigner();
-        const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+        const wavePortalContract = new ethers.Contract(CONTRACT_ADDRESS, contractABI, signer);
 
         let count = await wavePortalContract.getTotalWaves();
         console.log("Recuperado o número de tchauzinhos...", count.toNumber());
@@ -130,21 +124,19 @@ export default function App() {
   const setListeners = async () => {
     const { ethereum } = window;
 
-    if (!ethereum) {
-      // alert("MetaMask encontrada!");
-      return;
-    }
-    
+    if (!ethereum) return;
+
     ethereum.on("chainChanged", () => {
       alert("chain changed");
       setWrongNetworkError(true);
       getChainId();
     });
     
-    ethereum.on("accountsChanged", () => {
-        alert("account changed");
+    ethereum.on("accountsChanged", async () => {
+        // alert("account changed");
         setCurrentAccount(null);
         setTotalWaves(0);
+        await connectWallet();
     });
     
     ethereum.on("disconnect", () => {
@@ -170,37 +162,47 @@ export default function App() {
   
   useEffect(() => {
     checkIfWalletIsConnected();
-    getTotalWaves();
+    getTotalWaves(currentAccount);
     setListeners();
-  }, [])
+  }, []);
   
+  const disconnectWallet = async () => {
+    refreshState();
+  };
+
+  const refreshState = () => {
+    setCurrentAccount(null);
+    setTotalWaves(0);
+    setMineLoading(false);
+    setWrongNetworkError(false);
+  };
+
   return (
     <div className="mainContainer">
 
       <div className="dataContainer">
-        { wrongNetworkError && <div className="top warning">Only Goerli network is supported</div> }
-
-        {/* <div className="connectWallet">
+        
         {
-          !currentAccount && 
-          (
-            <button className="waveButton" onClick={connectWallet}>
-              Conectar carteira
-            </button>
-          )
+          wrongNetworkError &&
+          <div className="top warning">Only Goerli network is supported</div>
         }
-        </div> */}
+
         <div className="header">
-        { currentAccount ? 
-        (<p>👋 Hi {currentAccount}</p>) 
-        :           
-        (
-          <div className="headerContainer">
-        <p>👋 Hi everyone</p>
-        <button className="waveButton btnHeader" onClick={connectWallet}>
-              Conectar carteira
-            </button>
-          </div>) }
+        { 
+          currentAccount
+          ? (
+              <div className="headerContainer">
+                <p>👋 Hi {currentAccount}</p>
+                { !wrongNetworkError && <button className="waveButton btnHeader" onClick={disconnectWallet}>Logout</button> }
+              </div>
+            )
+          : (
+              <div className="headerContainer">
+                <p>👋 Hi everyone</p>
+                <button className="waveButton btnHeader" onClick={connectWallet}>Connect wallet</button>
+              </div>
+            )
+        }
         </div>
 
         <div className="bio">
@@ -208,35 +210,40 @@ export default function App() {
         </div>
 
         {
-          !currentAccount && (
+          !currentAccount &&
+          (
             <div className="bio">
-This is just an example so, please connect your metamask wallet and send me a wave!
-        </div>
+              This is just an example so, please connect your metamask wallet and send me a wave!
+            </div>
           )
         }
 
         {
           (currentAccount && !wrongNetworkError) &&
-        (<div>
-          <div className="bio">Here you will visualize all waves that people already sent to me.</div>
-          <div className="bio counter">Total wave count: {totalWaves}</div>
-          </div>)
+          (
+            <div>
+              <div className="bio">Here you will visualize all waves that people already sent to me.</div>
+              <div className="bio counter">Total wave count: {totalWaves}</div>
+            </div>
+          )
         }
 
         <div className="btnContainer">
         {
-          !mineLoading ? 
+          !mineLoading ?
           (
-            <button disabled={!currentAccount || wrongNetworkError} className="waveButton" onClick={wave}>
+            <button
+              disabled={!currentAccount || wrongNetworkError}
+              className="waveButton"
+              onClick={wave}
+            >
               Send wave 🌟
             </button>
           )
-          : (<div className="loading"></div>) 
+          : (<div className="loading"></div>)
         }
         </div>
-
-
-      </div> 
+      </div>
     </div>
   );
 }
