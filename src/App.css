@@ -39,6 +39,11 @@ html, body {
 
 .btnHeader {
   justify-content: right;
+  margin-left: 15px;
+}
+
+.cancel {
+  background-color: red !important;
 }
 
 .bio {
@@ -47,9 +52,14 @@ html, body {
   margin-top: 16px;
 }
 
+p.bio {
+  font-size: 15px;
+  font-weight: 200;
+}
+
 .waveButton {
   cursor: pointer;
-  margin-top: 25px;
+  margin-top: 15px;
   padding: 8px;
   border: 0;
   border-radius: 5px;
@@ -86,6 +96,7 @@ div.btnContainer {
 }
 
 div.loading {
+  margin-top: 15px;
   width: 40px;
   height: 40px;
   border: 5px solid;
@@ -120,4 +131,14 @@ button[disabled]{
   font-size: 20px;
   font-weight: bold;
   color: black;
+}
+
+textarea {
+  width: -webkit-fill-available;
+  height: 80px;
+}
+
+div.input > div > p {
+  margin-top: 25px;
+  color: grey;
 }
