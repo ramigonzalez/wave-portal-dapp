@@ -21,6 +21,10 @@ export default function App() {
   
   const [wrongNetworkError, setWrongNetworkError] = useState(false);
 
+  const getActualAddress = async () => {
+    const network = await getChainInfo();
+    return await getContractAddress(network);
+  };
 
   const checkIfWalletIsConnected = async () => {
     try {
@@ -39,8 +43,7 @@ export default function App() {
         const account = accounts[0];
         console.log("Encontrada a conta autorizada:", account);
         setCurrentAccount(account);
-        const network = await getChainInfo();
-        const actualContractAddress = await getContractAddress(network);
+        const actualContractAddress = await getActualAddress();
         await getAllWaves(actualContractAddress);
         await getTotalWaves(account, actualContractAddress);
         await getName(actualContractAddress);
@@ -96,10 +99,12 @@ export default function App() {
 
         setMineLoading(true);
         
-        const waveTxn = await wavePortalContract.wave(waveMessage);
+        const waveTxn = await wavePortalContract.wave(waveMessage, { gasLimit: 300000 });
 
         console.log("Mining wave tx...", waveTxn.hash);
+
         await waveTxn.wait();
+
         console.log("Mined tx ->", waveTxn.hash);
         
         setMineLoading(false);
@@ -108,9 +113,6 @@ export default function App() {
         console.log("Total wave count...", count.toNumber());
 
         setTotalWaves(count.toNumber());
-
-        await getAllWaves();
-
       } else {
         console.log("Ethereum object not found");
       }
@@ -140,7 +142,6 @@ export default function App() {
   };
 
   const getTotalWaves = async (account, actualContractAddress) => {
-    console.log(account, actualContractAddress);
     if (!account && !currentAccount) return;
     const contract = !contractAddress ? actualContractAddress : contractAddress;
     try {
@@ -169,6 +170,7 @@ export default function App() {
     ethereum.on("chainChanged", async () => {
       // alert("chain changed");
       setWrongNetworkError(true);
+      setMineLoading(false);
       const network = await getChainInfo();
       const actualContractAddress = await getContractAddress(network);
       await getAllWaves(actualContractAddress);
@@ -240,6 +242,8 @@ export default function App() {
           message: wave.message
         })).reverse();
         
+        console.log("getAllWaves - wavesCleaned", wavesCleaned);
+
         setAllWaves(wavesCleaned);
       } else {
         console.log("Ethereum object not found!")
@@ -281,7 +285,7 @@ export default function App() {
       console.log("Mined tx ->", tx.hash);
       setMineLoading(false);
       console.log("Name set as...", name);
-      setName(name);
+
       setNameInput(false)
     } catch (error) {
       console.log(error);
@@ -292,7 +296,39 @@ export default function App() {
   useEffect(() => {
     checkIfWalletIsConnected();
     setListeners();
-  }, []);
+
+    let wavePortalContract;
+    const onNewWave = (from) => {
+      const { from: address, timestamp, message, name: name_ } = from.args;
+      console.log(CONSTANTS.EVENTS, address, timestamp, message, name_);
+      setAllWaves(prevState => [
+        {
+          address,
+          timestamp: new Date(timestamp * 1000),
+          message,
+          name: name_
+        },
+        ...prevState
+      ]);
+    };
+
+    const listenEvents = async () => {
+      if (window.ethereum) {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        let actualContractAddress;
+        !contractAddress ? actualContractAddress = await getActualAddress() : actualContractAddress = contractAddress;
+        wavePortalContract = new ethers.Contract(actualContractAddress, contractABI, signer);
+        wavePortalContract.on(CONSTANTS.EVENTS, onNewWave);
+      }
+    };
+    listenEvents();
+    return () => {
+      if (wavePortalContract) {
+        wavePortalContract.off(CONSTANTS.EVENTS, onNewWave);
+      }
+    };
+  }, [contractAddress]);
 
   return (
     <div className="mainContainer">
@@ -392,7 +428,7 @@ export default function App() {
 
         {allWaves.map((wave, index) => {
           return (
-            <div key={index} style={{ backgroundColor: "OldLace", marginTop: "16px", padding: "8px" }}>
+            <div key={index} style={{ backgroundColor: "lightblue", marginTop: "16px", padding: "8px", border: "5px" }}>
               <div>Address: {wave.address}</div>
               { !!wave.name && (<div>Name: {wave.name}</div>) }
               <div>Datetime: {wave.timestamp.toString()}</div>
